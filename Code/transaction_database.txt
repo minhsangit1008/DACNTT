@@ -1,0 +1,1 @@
+T1: a b c d T2: a c T3: b c d T4: a b c T5: b d T6: a c d
