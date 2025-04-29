@@ -40,7 +40,7 @@ if __name__ == "__main__":
     output_transactions_file = "online_retail_transactions.txt"
     output_weights_file = "weight_dict.txt"
     
-    weight_dict = preprocess_online_retail(input_file, output_transactions_file, output_weights_file, max_transactions=10)
+    weight_dict = preprocess_online_retail(input_file, output_transactions_file, output_weights_file, max_transactions=100)
     print(f"Transactions saved to {output_transactions_file}")
     print(f"Weight dictionary saved to {output_weights_file}")
     print(f"Number of transactions: {sum(1 for line in open(output_transactions_file))}")

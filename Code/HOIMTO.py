@@ -21,7 +21,6 @@ def calculate_TO(database):
 def calculate_IO_IOUB(itemset, database, TO):
     tids = [tid for tid, t in enumerate(database) if set(itemset).issubset(t)]
     IO = sum(TO[tid] for tid in tids)
-    # IOUB: Giả định đơn giản là tổng TO của các giao dịch chứa ít nhất một mục trong itemset
     IOUB = sum(TO[tid] for tid, t in enumerate(database) if any(item in t for item in itemset))
     return IO, IOUB, tids
 
