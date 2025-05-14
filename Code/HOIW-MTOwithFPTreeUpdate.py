@@ -220,8 +220,8 @@ if __name__ == "__main__":
     
     weight_dict = load_weight_dict(weights_file)
     database = load_weighted_database(transactions_file, weight_dict)
-    MinWIO = 0.05
-    min_ws = 0.01
+    MinWIO = 0.02
+    min_ws = 0.001
     
     print("HOWI-MTO results (with FP-Tree):")
     start_time = time.time()
