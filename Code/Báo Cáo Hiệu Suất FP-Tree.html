@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Báo Cáo Hiệu Suất FP-Tree</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.8.1/prop-types.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.15.0/Recharts.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div id="root" class="container mx-auto p-6"></div>
+
+  <script type="text/babel">
+    const App = () => {
+      const [data, setData] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+
+      // Dữ liệu CSV được nhúng trực tiếp
+      const csvData = `MinWIO,min_ws,NumItemsets,Time(s),Memory(MB)
+0.01,0.01,1460,76.77409601211548,132.60546875
+0.01,0.05,227,7.115955591201782,0.0
+0.01,0.1,31,0.5414731502532959,0.0
+0.01,0.15,7,0.11240601539611816,0.1796875
+0.01,0.2,3,0.1401195526123047,0.1171875
+0.05,0.01,227,7.954795598983765,27.5078125
+0.05,0.05,227,7.185432434082031,0.0
+0.05,0.1,31,0.7027876377105713,0.0
+0.05,0.15,7,0.1635594367980957,0.1484375
+0.05,0.2,3,0.17490816116333008,0.140625
+0.1,0.01,31,1.704742193222046,0.0
+0.1,0.05,31,1.1778032779693604,0.0
+0.1,0.1,31,0.3602876663208008,0.0
+0.1,0.15,7,0.15323305130004883,0.0703125
+0.1,0.2,3,0.22240424156188965,0.03515625
+0.15,0.01,7,1.3565473556518555,9.1171875
+0.15,0.05,7,0.5754928588867188,15.51171875
+0.15,0.1,7,0.14394807815551758,0.56640625
+0.15,0.15,7,0.17536640167236328,0.08203125
+0.15,0.2,3,0.19771742820739746,0.09375
+0.2,0.01,3,1.6448700428009033,0.0
+0.2,0.05,3,1.2946455478668213,1.84375
+0.2,0.1,3,0.25145888328552246,0.39453125
+0.2,0.15,3,0.11441516876220703,0.265625
+0.2,0.2,3,0.18544316291809082,0.19921875`;
+
+      // Xử lý và làm sạch dữ liệu
+      const processAndCleanData = (rawData) => {
+        return rawData.map(row => ({
+          MinWIO: parseFloat(row["MinWIO"]) || 0,
+          min_ws: parseFloat(row["min_ws"]) || 0,
+          NumItemsets: parseInt(row["NumItemsets"]) || 0,
+          Time: parseFloat(row["Time(s)"]) || 0,
+          Memory: parseFloat(row["Memory(MB)"]) || 0,
+          paramKey: `${row["MinWIO"]}-${row["min_ws"]}`
+        })).filter(row => row.MinWIO !== 0 && row.min_ws !== 0);
+      };
+
+      // Tải dữ liệu
+      React.useEffect(() => {
+        Papa.parse(csvData, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            const cleanedData = processAndCleanData(results.data);
+            setData(cleanedData);
+            setLoading(false);
+          },
+          error: (err) => {
+            console.error("Lỗi phân tích CSV:", err);
+            setLoading(false);
+          }
+        });
+      }, []);
+
+      if (loading) {
+        return (
+          <div className="text-center text-xl text-gray-600 mt-10">
+            Đang tải dữ liệu...
+          </div>
+        );
+      }
+
+      // Nhóm dữ liệu theo MinWIO
+      const groupedByMinWIO = data.reduce((acc, row) => {
+        if (!acc[row.MinWIO]) acc[row.MinWIO] = [];
+        acc[row.MinWIO].push(row);
+        return acc;
+      }, {});
+
+      // Màu sắc cho các giá trị MinWIO
+      const colors = {
+        0.01: '#3B82F6', // Xanh dương
+        0.05: '#10B981', // Xanh lá
+        0.1: '#8B5CF6',  // Tím
+        0.15: '#F59E0B', // Vàng
+        0.2: '#EF4444'   // Đỏ
+      };
+
+      return (
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            Báo Cáo Hiệu Suất Thuật Toán FP-Tree
+          </h1>
+          <p className="text-gray-600 mb-6">
+            Báo cáo này phân tích hiệu suất của thuật toán FP-Tree trên bộ dữ liệu với các ngưỡng <code>MinWIO</code> và <code>min_ws</code>. Các chỉ số bao gồm số lượng itemsets, thời gian chạy, và bộ nhớ sử dụng. Kết quả cho thấy ngưỡng cao làm giảm mạnh số itemsets và thời gian xử lý.
+          </p>
+
+          {/* Biểu đồ số lượng itemsets */}
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+            Số Lượng Itemsets
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Số itemsets giảm mạnh khi tăng <code>MinWIO</code> và <code>min_ws</code>, do thuật toán cắt tỉa nghiêm ngặt hơn.
+          </p>
+          <div className="mb-8">
+            <Recharts.ResponsiveContainer width="100%" height={400}>
+              <Recharts.AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" />
+                <Recharts.XAxis
+                  dataKey="min_ws"
+                  label={{ value: 'min_ws', position: 'bottom', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <Recharts.YAxis
+                  label={{ value: 'Số Itemsets', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <Recharts.Tooltip />
+                <Recharts.Legend />
+                {Object.keys(groupedByMinWIO).map(minWIO => (
+                  <Recharts.Area
+                    key={minWIO}
+                    data={groupedByMinWIO[minWIO]}
+                    dataKey="NumItemsets"
+                    name={`MinWIO=${minWIO}`}
+                    stroke={colors[minWIO]}
+                    fill={colors[minWIO]}
+                    fillOpacity={0.3}
+                  />
+                ))}
+              </Recharts.AreaChart>
+            </Recharts.ResponsiveContainer>
+          </div>
+
+          {/* Biểu đồ thời gian chạy */}
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+            Thời Gian Chạy
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Thời gian chạy giảm khi <code>min_ws</code> tăng, đặc biệt với <code>MinWIO</code> thấp, do xử lý ít itemsets hơn.
+          </p>
+          <div className="mb-8">
+            <Recharts.ResponsiveContainer width="100%" height={400}>
+              <Recharts.LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" />
+                <Recharts.XAxis
+                  dataKey="min_ws"
+                  label={{ value: 'min_ws', position: 'bottom', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <Recharts.YAxis
+                  label={{ value: 'Thời gian (giây)', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <Recharts.Tooltip />
+                <Recharts.Legend />
+                {Object.keys(groupedByMinWIO).map(minWIO => (
+                  <Recharts.Line
+                    key={minWIO}
+                    data={groupedByMinWIO[minWIO]}
+                    dataKey="Time"
+                    name={`MinWIO=${minWIO}`}
+                    stroke={colors[minWIO]}
+                  />
+                ))}
+              </Recharts.LineChart>
+            </Recharts.ResponsiveContainer>
+          </div>
+
+          {/* Biểu đồ bộ nhớ */}
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+            Bộ Nhớ Sử Dụng
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Bộ nhớ sử dụng thường thấp, chỉ tăng đáng kể ở một số trường hợp như <code>MinWIO=0.01, min_ws=0.01</code>.
+          </p>
+          <div className="mb-8">
+            <Recharts.ResponsiveContainer width="100%" height={400}>
+              <Recharts.BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" />
+                <Recharts.XAxis
+                  dataKey="paramKey"
+                  label={{ value: 'MinWIO-min_ws', position: 'bottom', fontSize: 12 }}
+                  tick={{ fontSize: 12, angle: -45, textAnchor: 'end' }}
+                />
+                <Recharts.YAxis
+                  label={{ value: 'Bộ nhớ (MB)', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                  tick={{ fontSize: 12 }}
+                />
+                <Recharts.Tooltip />
+                <Recharts.Bar dataKey="Memory" fill="#3B82F6" />
+              </Recharts.BarChart>
+            </Recharts.ResponsiveContainer>
+          </div>
+
+          {/* Điểm thú vị */}
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+            Điểm Thú Vị
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Các mục <code>DOT</code> (WIO=0.222), <code>85099B</code> (WIO=0.216), và <code>47566</code> (WIO=0.214) xuất hiện ngay cả ở ngưỡng cao (<code>MinWIO=0.2, min_ws=0.2</code>). Điều này cho thấy chúng có thể là các sản phẩm rất phổ biến hoặc có ý nghĩa đặc biệt trong dữ liệu giao dịch.
+          </p>
+
+          <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+            Kết Luận
+          </h2>
+          <p className="text-gray-600">
+            Thuật toán FP-Tree hoạt động hiệu quả, với thời gian và bộ nhớ giảm khi ngưỡng tăng. Các mục như <code>DOT</code>, <code>85099B</code>, và <code>47566</code> nổi bật vì tần suất cao, đáng để phân tích sâu hơn trong ứng dụng thực tế.
+          </p>
+        </div>
+      );
+    };
+
+    // Render ứng dụng
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
